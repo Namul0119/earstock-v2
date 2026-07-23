@@ -1,5 +1,5 @@
 name: earstock
-description: "A new Flutter project."
+description: "Real-time stock alert application built with Flutter and Spring Boot."
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
@@ -40,6 +40,7 @@ dependencies:
   audioplayers: ^6.6.0
   firebase_messaging: ^16.2.2
   flutter_local_notifications: ^17.2.1
+  shared_preferences: ^2.5.5
 
 dev_dependencies:
   flutter_test:
@@ -100,14 +101,21 @@ flutter:
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package
 
-flutter_icons:
+flutter_launcher_icons:
   android: true
   ios: false
   image_path: "assets/icon/app_icon.png"
+  adaptive_icon_background: "#101116"
+  adaptive_icon_foreground: "assets/icon/app_icon_foreground.png"
+  min_sdk_android: 21
 
 flutter_native_splash:
   color: "#0B0B0F"
-  image: assets/icon/app_icon.png
+  image: assets/icon/app_icon_foreground.png
   android: true
   ios: false
   web: false
+
+  android_12:
+    color: "#0B0B0F"
+    image: assets/icon/app_icon.png

@@ -1,60 +1,151 @@
+# ==================================================
 # Miscellaneous
+# ==================================================
 *.class
 *.log
 *.pyc
 *.swp
 .DS_Store
+Thumbs.db
 .atom/
 .build/
 .buildlog/
-.history
+.history/
 .svn/
 .swiftpm/
 migrate_working_dir/
 
-# IntelliJ related
+# ==================================================
+# IDE
+# ==================================================
 *.iml
 *.ipr
 *.iws
 .idea/
 
-# The .vscode folder contains launch configuration and tasks you configure in
-# VS Code which you may wish to be included in version control, so this line
-# is commented out by default.
-#.vscode/
+# VS Code 개인 설정을 제외하려면 주석 해제
+# .vscode/
 
-# Flutter/Dart/Pub related
+# ==================================================
+# Flutter / Dart / Pub
+# ==================================================
 **/doc/api/
 **/ios/Flutter/.last_build_id
 .dart_tool/
+.flutter-plugins
 .flutter-plugins-dependencies
+.packages
 .pub-cache/
 .pub/
 /build/
 /coverage/
 
-# Symbolication related
+# ==================================================
+# Flutter symbolication / obfuscation
+# ==================================================
 app.*.symbols
-
-# Obfuscation related
 app.*.map.json
 
-# Android Studio will place build artifacts here
-/android/app/debug
-/android/app/profile
-/android/app/release
+# ==================================================
+# Android generated files
+# ==================================================
+/android/.gradle/
+/android/.kotlin/
+/android/app/debug/
+/android/app/profile/
+/android/app/release/
+android/local.properties
 
-# Firebase
+# ==================================================
+# Android signing credentials
+# ==================================================
+*.jks
+*.keystore
+key.properties
+android/key.properties
+
+# ==================================================
+# Apple signing credentials
+# ==================================================
+*.p12
+*.pfx
+*.mobileprovision
+
+# ==================================================
+# Private keys / certificates
+# ==================================================
+*.pem
+*.key
+id_rsa
+id_ed25519
+
+# ==================================================
+# Environment and secret files
+# ==================================================
+.env
+.env.*
+!.env.example
+
+keys.dart
+secret.dart
+secrets.dart
+
+**/credentials/
+**/secrets/
+**/.secrets/
+
+# ==================================================
+# Firebase client configuration
+# 보안 정책상 저장소에 포함하지 않음
+# ==================================================
 android/app/google-services.json
+ios/Runner/GoogleService-Info.plist
+macos/Runner/GoogleService-Info.plist
 lib/firebase_options.dart
 firebase.json
 .firebaserc
+
+# ==================================================
+# Firebase Admin / Service Account credentials
+# ==================================================
+**/*firebase-adminsdk*.json
+**/*service-account*.json
+**/*service_account*.json
+**/*admin-sdk*.json
+**/*serviceAccount*.json
+
+# ==================================================
+# Firebase Functions
+# 현재 Spring Boot 서버 사용으로 Functions 전체 제외
+# ==================================================
 functions/
 
-# API Keys
-.env
-keys.dart
-secret.dart
+# Firebase Functions를 다시 사용할 경우 위 functions/를 삭제하고
+# 아래 규칙을 대신 사용
+# functions/node_modules/
+# functions/.env
+# functions/.env.*
+# functions/.runtimeconfig.json
+# functions/lib/
 
-# APK
+# ==================================================
+# Node.js
+# ==================================================
+**/node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ==================================================
+# Build packages
+# ==================================================
 *.apk
+*.aab
+*.ipa
+
+# ==================================================
+# Demo videos / large media
+# ==================================================
+demo/
+*.mp4
+*.mov
