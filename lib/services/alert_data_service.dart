@@ -1,12 +1,8 @@
 import 'alert_api.dart';
 
 class AlertDataService {
-  static Future<List<Map<String, dynamic>>> loadAlertLogs(
-    String userId,
-  ) async {
-    final result = await AlertApi.getAlerts(
-      userId,
-    );
+  static Future<List<Map<String, dynamic>>> loadAlertLogs() async {
+    final result = await AlertApi.getAlerts();
 
     return result.reversed.map<Map<String, dynamic>>(
       (item) {
@@ -28,11 +24,7 @@ class AlertDataService {
     ).toList();
   }
 
-  static Future<void> clearAlertLogs(
-    String userId,
-  ) async {
-    await AlertApi.deleteAlerts(
-      userId,
-    );
+  static Future<void> clearAlertLogs() async {
+    await AlertApi.deleteAlerts();
   }
 }

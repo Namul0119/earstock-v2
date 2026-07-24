@@ -5,7 +5,7 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'firebase_options.dart';
-import 'screens/home_page.dart';
+import 'screens/auth_gate.dart';
 import 'services/notification_service.dart';
 
 @pragma('vm:entry-point')
@@ -67,7 +67,7 @@ class EarStockApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'EarStock',
       theme: ThemeData.dark(),
-      home: const HomePage(),
+      home: const AuthGate(),
     );
   }
 }

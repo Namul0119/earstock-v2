@@ -14,6 +14,8 @@ import '../services/sound_service.dart';
 import '../services/alert_data_service.dart';
 import '../services/stock_data_service.dart';
 import '../services/fcm_registration_service.dart';
+import '../services/auth_service.dart';
+import '../services/fcm_token_api.dart';
 
 import '../widgets/stock_card.dart';
 import '../widgets/add_stock_form.dart';
@@ -29,6 +31,9 @@ import '../utils/format_utils.dart';
 import '../utils/market_utils.dart';
 import '../utils/sound_utils.dart';
 
+import 'login_page.dart';
+import '../config/api_service.dart';
+
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
 
@@ -37,8 +42,6 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-
-  static const String currentUserId = "namul";
 
   static const backgroundColor = Color(0xff151329);
 
@@ -49,6 +52,8 @@ class _HomePageState extends State<HomePage> {
   static const dangerColor = Color(0xffFF5C7A);
 
   static const successColor = Color(0xff00F5A0);
+
+  late final AuthService authService;
 
   final TextEditingController stockController = TextEditingController();
   final TextEditingController lowController = TextEditingController();
@@ -92,6 +97,10 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
+
+    authService = AuthService(
+      baseUrl: ApiService.baseUrl,
+    );
 
     loadSettings();
 
@@ -297,7 +306,6 @@ class _HomePageState extends State<HomePage> {
 
     try {
       await WatchApi.addWatch(
-        userId: currentUserId,
         stockCode: stockCode,
         lowPrice: lowPrice,
         highPrice: highPrice,
@@ -406,9 +414,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<void> setupFCM() async {
-    await FcmRegistrationService.initialize(
-      currentUserId,
-    );
+    await FcmRegistrationService.initialize();
 
     //showMessage('FCM 토큰을 콘솔에 출력했습니다.');
 
@@ -500,9 +506,7 @@ class _HomePageState extends State<HomePage> {
   Future<void> loadAlertsFromSpring() async {
     try {
       final loadedAlertLogs =
-          await AlertDataService.loadAlertLogs(
-        currentUserId,
-      );
+        await AlertDataService.loadAlertLogs();
 
       if (!mounted) {
         return;
@@ -594,9 +598,7 @@ class _HomePageState extends State<HomePage> {
 
   Future<void> clearAlertLogs() async {
     try {
-      await AlertDataService.clearAlertLogs(
-        currentUserId,
-      );
+      await AlertDataService.clearAlertLogs();
 
       await loadAlertsFromSpring();
 
@@ -661,6 +663,76 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
+  Future<void> logout() async {
+    final shouldLogout = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          backgroundColor: panelColor,
+          title: const Text('로그아웃'),
+          content: const Text(
+            'EarStock에서 로그아웃하시겠습니까?',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(dialogContext).pop(false);
+              },
+              child: const Text(
+                '취소',
+                style: TextStyle(
+                  color: Colors.white70,
+                ),
+              ),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(dialogContext).pop(true);
+              },
+              child: const Text(
+                '로그아웃',
+                style: TextStyle(
+                  color: dangerColor,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (shouldLogout != true) {
+      return;
+    }
+
+    try {
+      final fcmToken =
+          await FirebaseMessaging.instance.getToken();
+
+      if (fcmToken != null && fcmToken.isNotEmpty) {
+        await FcmTokenApi.unregisterToken(
+          token: fcmToken,
+        );
+      }
+    } catch (e) {
+      print('FCM Token 등록 해제 실패: $e');
+    }
+
+    await authService.logout();
+
+    if (!mounted) {
+      return;
+    }
+
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(
+        builder: (_) => const LoginPage(),
+      ),
+      (route) => false,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -672,12 +744,23 @@ class _HomePageState extends State<HomePage> {
         elevation: 0,
         centerTitle: false,
         title: const Text(
-          "EarStock",
+          'EarStock',
           style: TextStyle(
             fontWeight: FontWeight.bold,
             letterSpacing: 0.8,
           ),
         ),
+        actions: [
+          IconButton(
+            onPressed: logout,
+            tooltip: '로그아웃',
+            icon: const Icon(
+              Icons.logout_rounded,
+              color: Colors.white70,
+            ),
+          ),
+          const SizedBox(width: 8),
+        ],
       ),
 
       body: Padding(
