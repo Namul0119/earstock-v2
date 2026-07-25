@@ -84,7 +84,7 @@ Firebase Push 알림을 즉시 전송합니다.
 
 > 아래 다이어그램 참고
 
-![Architecture](screenshots/architecture.png)
+![Architecture](screenshots/v2/architecture.png)
 
 ---
 
@@ -92,7 +92,7 @@ Firebase Push 알림을 즉시 전송합니다.
 
 > 아래 ERD 참고
 
-![ERD](screenshots/erd.png)
+![ERD](screenshots/v2/erd.png)
 
 ---
 
@@ -194,24 +194,24 @@ config
 
 ## 로그인
 
-![Login](screenshots/login.png)
+![Login](screenshots/v2/login.png)
 
 ---
 
 ## 메인 화면
 
-![Home](screenshots/home.png)
+![Home](screenshots/v2/home.png)
 ---
 
 ## 감시 종목 등록
 
-![Watch](screenshots/watch.png)
+![Watch](screenshots/v2/watch.png)
 
 ---
 
 ## 관리자 페이지
 
-![Admin](screenshots/admin.png)
+![Admin](screenshots/v2/admin.png)
 
 ---
 
