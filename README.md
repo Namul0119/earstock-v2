@@ -194,18 +194,18 @@ config
 
 ## 로그인
 
-![Login](screenshots/v2/login.png)
+![Login](screenshots/v2/login.jpg)
 
 ---
 
 ## 메인 화면
 
-![Home](screenshots/v2/home.png)
+![Home](screenshots/v2/home.jpg)
 ---
 
 ## 감시 종목 등록
 
-![Watch](screenshots/v2/watch.png)
+![Watch](screenshots/v2/watch.jpg)
 
 ---
 
