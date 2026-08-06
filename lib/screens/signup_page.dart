@@ -152,14 +152,30 @@ class _SignupPageState extends State<SignupPage> {
     }
 
     void showMessage(String message) {
-        ScaffoldMessenger.of(context)
-            .hideCurrentSnackBar();
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
 
         ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-            content: Text(message),
-            backgroundColor: panelColor,
-        ),
+            SnackBar(
+                behavior: SnackBarBehavior.floating,
+                margin: const EdgeInsets.fromLTRB(
+                    16,
+                    0,
+                    16,
+                    28,
+                ),
+                backgroundColor: panelColor,
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                ),
+                content: Text(
+                    message,
+                    style: const TextStyle(
+                    color: Color(0xFFFF6B6B),
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                    ),
+                ),
+            ),
         );
     }
 
