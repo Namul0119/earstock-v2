@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../services/token_service.dart';
+import '../config/api_service.dart';
+import '../services/auth_service.dart';
 import 'home_page.dart';
 import 'login_page.dart';
 
@@ -8,25 +9,31 @@ class AuthGate extends StatefulWidget {
   const AuthGate({super.key});
 
   @override
-  State<AuthGate> createState() => _AuthGateState();
+  State<AuthGate> createState() =>
+      _AuthGateState();
 }
 
 class _AuthGateState extends State<AuthGate> {
-  final TokenService tokenService = TokenService();
+  late final AuthService authService;
 
   @override
   void initState() {
     super.initState();
+
+    authService = AuthService(
+      baseUrl: ApiService.baseUrl,
+    );
+
     checkLoginStatus();
   }
 
   Future<void> checkLoginStatus() async {
-    final hasToken =
-        await tokenService.hasAccessToken();
+    final isValid =
+        await authService.validateCurrentSession();
 
     if (!mounted) return;
 
-    if (hasToken) {
+    if (isValid) {
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(
           builder: (_) => const HomePage(),

@@ -48,11 +48,9 @@ class FcmTokenApi {
       return;
     }
 
-    if (response.statusCode == 401) {
-      throw Exception(
-        '로그인 정보가 만료되었거나 유효하지 않습니다.',
-      );
-    }
+    await _handleUnauthorized(
+      response.statusCode,
+    );
 
     throw Exception(
       responseText.isNotEmpty
@@ -101,16 +99,26 @@ class FcmTokenApi {
       return;
     }
 
-    if (response.statusCode == 401) {
-      throw Exception(
-        '로그인 정보가 만료되었거나 유효하지 않습니다.',
-      );
-    }
+    await _handleUnauthorized(
+      response.statusCode,
+    );
 
     throw Exception(
       responseText.isNotEmpty
           ? responseText
           : 'FCM Token 등록 해제 실패',
     );
+  }
+
+  static Future<void> _handleUnauthorized(
+    int statusCode,
+  ) async {
+    if (statusCode == 401) {
+      await _tokenService.deleteAccessToken();
+
+      throw Exception(
+        '로그인이 만료되었습니다. 다시 로그인해주세요.',
+      );
+    }
   }
 }

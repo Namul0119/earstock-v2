@@ -46,7 +46,7 @@ class NotificationService {
         data['body']?.toString() ?? '';
 
     final String alertType =
-        data['alertType']?.toString() ?? 'HIGH';
+        data['alertType']?.toString() ?? 'NOTICE';
 
     await show(
       title: title,
@@ -60,7 +60,8 @@ class NotificationService {
     required String body,
     required String alertType,
   }) async {
-    final prefs = await SharedPreferences.getInstance();
+    final prefs =
+        await SharedPreferences.getInstance();
 
     await prefs.reload();
 
@@ -74,77 +75,150 @@ class NotificationService {
         prefs.getBool(vibrationEnabledKey) ?? true;
 
     if (!pushEnabled) {
-      _log('푸시 알림 OFF: 알림을 표시하지 않음');
+      _log(
+        '푸시 알림 OFF: 알림을 표시하지 않음',
+      );
       return;
     }
 
-    final bool isLow = alertType.toUpperCase() == 'LOW';
+    final String normalizedAlertType =
+        alertType.toUpperCase();
 
-    final String selectedSoundPath = isLow
-        ? prefs.getString(warningSoundKey) ??
-            'sounds/warning_01.mp3'
-        : prefs.getString(successSoundKey) ??
-            'sounds/success_01.mp3';
+    final bool isLow =
+        normalizedAlertType == 'LOW';
 
-    // sounds/warning_03.mp3 → warning_03
-    final String soundName = selectedSoundPath
-        .replaceFirst('sounds/', '')
-        .replaceFirst('.mp3', '');
+    final bool isHigh =
+        normalizedAlertType == 'HIGH';
+
+    final bool isNotice =
+        normalizedAlertType == 'NOTICE';
 
     /*
-     * Android 8 이상에서는 알림음이 채널에 저장된다.
-     * 음원마다 채널 ID를 다르게 사용한다.
+     * NOTICE는 일반 공지이므로
+     * 위험/목표 알림음을 사용하지 않는다.
      */
+    final bool shouldPlaySound =
+        soundEnabled && !isNotice;
+
+    String? soundName;
+
+    if (isLow) {
+      final String selectedSoundPath =
+          prefs.getString(warningSoundKey) ??
+              'sounds/warning_01.mp3';
+
+      soundName = selectedSoundPath
+          .replaceFirst('sounds/', '')
+          .replaceFirst('.mp3', '');
+    } else if (isHigh) {
+      final String selectedSoundPath =
+          prefs.getString(successSoundKey) ??
+              'sounds/success_01.mp3';
+
+      soundName = selectedSoundPath
+          .replaceFirst('sounds/', '')
+          .replaceFirst('.mp3', '');
+    }
+
     final String soundState =
-    soundEnabled ? 'sound_on' : 'sound_off';
+        shouldPlaySound
+            ? 'sound_on'
+            : 'sound_off';
 
     final String vibrationState =
-        vibrationEnabled ? 'vibration_on' : 'vibration_off';
+        vibrationEnabled
+            ? 'vibration_on'
+            : 'vibration_off';
 
-    final String channelId =
-        'earstock_${soundName}_${soundState}_${vibrationState}_channel';
+    final String channelId;
 
-    final String channelName = isLow
-        ? 'EarStock 위험 알림 - $soundName - $soundState - $vibrationState'
-        : 'EarStock 목표 알림 - $soundName - $soundState - $vibrationState';
+    final String channelName;
+
+    final String channelDescription;
+
+    if (isLow) {
+      channelId =
+          'earstock_${soundName}_${soundState}_${vibrationState}_low_channel';
+
+      channelName =
+          'EarStock 위험 알림 - $soundName - $soundState - $vibrationState';
+
+      channelDescription =
+          'EarStock 하락 기준가 도달 알림';
+    } else if (isHigh) {
+      channelId =
+          'earstock_${soundName}_${soundState}_${vibrationState}_high_channel';
+
+      channelName =
+          'EarStock 목표 알림 - $soundName - $soundState - $vibrationState';
+
+      channelDescription =
+          'EarStock 상승 기준가 도달 알림';
+    } else {
+      channelId =
+          'earstock_notice_${vibrationState}_channel';
+
+      channelName =
+          'EarStock 일반 공지 - $vibrationState';
+
+      channelDescription =
+          'EarStock 관리자 일반 공지';
+    }
 
     _log('알림 표시 시작');
     _log('title: $title');
-    _log('alertType: $alertType');
-    _log('soundName: $soundName');
+    _log('alertType: $normalizedAlertType');
+    _log('soundName: ${soundName ?? "없음"}');
     _log('channelId: $channelId');
+    _log('pushEnabled: $pushEnabled');
     _log('soundEnabled: $soundEnabled');
-    _log('vibrationEnabled: $vibrationEnabled');
+    _log('shouldPlaySound: $shouldPlaySound');
+    _log(
+      'vibrationEnabled: $vibrationEnabled',
+    );
 
-    final androidDetails = AndroidNotificationDetails(
+    final androidDetails =
+        AndroidNotificationDetails(
       channelId,
       channelName,
-      channelDescription: 'EarStock 사용자 선택 알림음',
-      importance: Importance.max,
+      channelDescription:
+          channelDescription,
+
+      importance: isNotice
+          ? Importance.high
+          : Importance.max,
+
       priority: Priority.high,
 
-      playSound: soundEnabled,
+      playSound: shouldPlaySound,
 
-      sound: soundEnabled
+      sound: shouldPlaySound &&
+              soundName != null
           ? RawResourceAndroidNotificationSound(
               soundName,
             )
           : null,
 
-      enableVibration: vibrationEnabled,
+      enableVibration:
+          vibrationEnabled,
 
-      category: AndroidNotificationCategory.alarm,
-      visibility: NotificationVisibility.public,
+      category: isNotice
+          ? AndroidNotificationCategory.message
+          : AndroidNotificationCategory.alarm,
+
+      visibility:
+          NotificationVisibility.public,
     );
 
-    final notificationDetails = NotificationDetails(
+    final notificationDetails =
+        NotificationDetails(
       android: androidDetails,
     );
 
     final int notificationId =
-        DateTime.now().millisecondsSinceEpoch.remainder(
-              100000,
-            );
+        DateTime.now()
+            .millisecondsSinceEpoch
+            .remainder(100000);
 
     try {
       await _notifications.show(
@@ -156,7 +230,9 @@ class NotificationService {
 
       _log('알림 표시 완료');
     } catch (e) {
-      _log('알림 표시 실패: $e');
+      _log(
+        '알림 표시 실패: $e',
+      );
     }
   }
 }

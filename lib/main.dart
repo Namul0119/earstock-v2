@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 import 'firebase_options.dart';
 import 'screens/auth_gate.dart';
@@ -19,28 +18,6 @@ Future<void> firebaseMessagingBackgroundHandler(
   );
 
   await NotificationService.initialize();
-
-  @pragma('vm:entry-point')
-  Future<void> firebaseMessagingBackgroundHandler(
-    RemoteMessage message,
-  ) async {
-    WidgetsFlutterBinding.ensureInitialized();
-
-    await Firebase.initializeApp(
-      options: DefaultFirebaseOptions.currentPlatform,
-    );
-
-    await NotificationService.initialize();
-
-    if (kDebugMode) {
-      print('백그라운드 FCM 수신');
-      print('백그라운드 데이터: ${message.data}');
-    }
-
-    await NotificationService.showFromFcmData(
-      message.data,
-    );
-  }
 
   if (kDebugMode) {
     print('백그라운드 FCM 수신');

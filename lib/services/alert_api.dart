@@ -11,7 +11,7 @@ class AlertApi {
   static final TokenService _tokenService =
       TokenService();
 
-  static Future<List<dynamic>> getAlerts() async {
+  static Future<List> getAlerts() async {
     final accessToken =
         await _tokenService.getAccessToken();
 
@@ -33,7 +33,13 @@ class AlertApi {
       );
     }
 
-    throw Exception('알림 조회 실패');
+    await _handleUnauthorized(
+      response.statusCode,
+    );
+
+    throw Exception(
+      '알림 조회 실패: ${response.statusCode}',
+    );
   }
 
   static Future<void> deleteAlerts() async {
@@ -52,8 +58,28 @@ class AlertApi {
       },
     );
 
-    if (response.statusCode != 200) {
-      throw Exception('알림 삭제 실패');
+    if (response.statusCode == 200) {
+      return;
+    }
+
+    await _handleUnauthorized(
+      response.statusCode,
+    );
+
+    throw Exception(
+      '알림 삭제 실패: ${response.statusCode}',
+    );
+  }
+
+  static Future<void> _handleUnauthorized(
+    int statusCode,
+  ) async {
+    if (statusCode == 401) {
+      await _tokenService.deleteAccessToken();
+
+      throw Exception(
+        '로그인이 만료되었습니다. 다시 로그인해주세요.',
+      );
     }
   }
 }

@@ -89,6 +89,7 @@ class _HomePageState extends State<HomePage> {
   Timer? messageOverlayTimer;
 
   Timer? soundStopTimer;
+  bool isRedirectingToLogin = false;
   int refreshRemainingSeconds = 30;
 
   final AudioPlayer audioPlayer =
@@ -194,6 +195,10 @@ class _HomePageState extends State<HomePage> {
             isStockSearchOpen = true;
           });
         } catch (e) {
+          if (await handleAuthError(e)) {
+            return;
+          }
+
           if (!mounted) return;
 
           setState(() {
@@ -333,8 +338,66 @@ class _HomePageState extends State<HomePage> {
 
       showMessage('감시 종목이 등록되었습니다.');
     } catch (e) {
+      if (await handleAuthError(e)) {
+        return;
+      }
+
       showMessage('등록 실패: $e');
     }
+  }
+
+  Future<bool> handleAuthError(Object error) async {
+    final message = error.toString();
+
+    final isAuthError =
+        message.contains('로그인이 만료되었습니다') ||
+        message.contains('로그인이 필요합니다') ||
+        message.contains('401');
+
+    if (!isAuthError) {
+      return false;
+    }
+
+    if (isRedirectingToLogin) {
+      return true;
+    }
+
+    isRedirectingToLogin = true;
+
+    stockRefreshTimer?.cancel();
+    stockSearchDebounceTimer?.cancel();
+
+    await authService.logout();
+
+    if (!mounted) {
+      return true;
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text(
+          '로그인이 만료되었습니다. 다시 로그인해주세요.',
+        ),
+        duration: Duration(seconds: 2),
+      ),
+    );
+
+    await Future.delayed(
+      const Duration(milliseconds: 700),
+    );
+
+    if (!mounted) {
+      return true;
+    }
+
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(
+        builder: (_) => const LoginPage(),
+      ),
+      (route) => false,
+    );
+
+    return true;
   }
 
   void showMessage(String message) {
@@ -451,7 +514,6 @@ class _HomePageState extends State<HomePage> {
 
   Future<void> loadStocksFromSpring() async {
     try {
-
       final loadedStocks =
           await StockDataService.loadStocks();
 
@@ -459,14 +521,15 @@ class _HomePageState extends State<HomePage> {
         return;
       }
 
-      setState(() { 
+      setState(() {
         stockList = loadedStocks;
       });
-
     } catch (e) {
+      if (await handleAuthError(e)) {
+        return;
+      }
 
-      print(e);
-
+      print('감시 목록 조회 실패: $e');
     }
   }
 
@@ -501,7 +564,7 @@ class _HomePageState extends State<HomePage> {
   Future<void> loadAlertsFromSpring() async {
     try {
       final loadedAlertLogs =
-        await AlertDataService.loadAlertLogs();
+          await AlertDataService.loadAlertLogs();
 
       if (!mounted) {
         return;
@@ -511,6 +574,10 @@ class _HomePageState extends State<HomePage> {
         alertLogs = loadedAlertLogs;
       });
     } catch (e) {
+      if (await handleAuthError(e)) {
+        return;
+      }
+
       print('최근 알림 조회 실패: $e');
     }
   }
@@ -601,7 +668,11 @@ class _HomePageState extends State<HomePage> {
         '알림 기록을 모두 삭제했습니다.',
       );
     } catch (e) {
-      showMessage('삭제 실패');
+      if (await handleAuthError(e)) {
+        return;
+      }
+
+      showMessage('알림 기록 삭제에 실패했습니다.');
     }
   }
 
@@ -652,6 +723,10 @@ class _HomePageState extends State<HomePage> {
         '감시 기준이 수정되었습니다.',
       );
     } catch (e) {
+      if (await handleAuthError(e)) {
+        return;
+      }
+
       showMessage(
         '감시 기준 수정에 실패했습니다.',
       );
@@ -1072,6 +1147,10 @@ class _HomePageState extends State<HomePage> {
                             '감시 종목을 삭제했습니다.',
                           );
                         } catch (e) {
+                          if (await handleAuthError(e)) {
+                            return;
+                          }
+
                           showMessage(
                             '종목 삭제에 실패했습니다.',
                           );

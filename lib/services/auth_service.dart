@@ -104,6 +104,45 @@ class AuthService {
         throw Exception(message);
     }
 
+    Future<bool> validateCurrentSession() async {
+        final token =
+            await _tokenService.getAccessToken();
+
+        if (token == null || token.isEmpty) {
+            return false;
+        }
+
+        final uri = Uri.parse(
+            '$baseUrl/api/auth/me',
+        );
+
+        try {
+            final response = await http.get(
+            uri,
+            headers: {
+                'Authorization': 'Bearer $token',
+            },
+            );
+
+            if (response.statusCode == 200) {
+            return true;
+            }
+
+            if (response.statusCode == 401 ||
+                response.statusCode == 403) {
+            await _tokenService.deleteAccessToken();
+            return false;
+            }
+
+            return false;
+        } catch (_) {
+            // 네트워크 장애까지 "로그아웃"으로 간주하면
+            // 사용자가 인터넷 잠깐 끊긴 것만으로 세션이 날아갈 수 있으니
+            // 토큰은 삭제하지 않는다.
+            return false;
+        }
+    }
+
     Future<void> logout() async {
         await _tokenService.deleteAccessToken();
     }
