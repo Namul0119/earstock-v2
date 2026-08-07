@@ -433,20 +433,15 @@ class _HomePageState extends State<HomePage> {
         final title =
             message.data['title']?.toString() ?? 'EarStock';
 
-        // ① 시스템 푸시
+        // ① 시스템 알림
+        // 소리 / 진동 / 푸시는 NotificationService에서 한 번만 처리
         if (pushEnabled) {
           await NotificationService.showFromFcmData(
             message.data,
           );
         }
 
-        // ② 앱 내부 소리
-        await playAlertSound(alertType);
-
-        // ③ 앱 내부 진동
-        await playVibration(alertType);
-
-        // ④ 앱 내부 팝업
+        // ② 앱 내부 팝업
         showMessage('$title $alertType');
 
         await loadAlertsFromSpring();

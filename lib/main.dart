@@ -20,16 +20,26 @@ Future<void> firebaseMessagingBackgroundHandler(
 
   await NotificationService.initialize();
 
-  final prefs = await SharedPreferences.getInstance();
+  @pragma('vm:entry-point')
+  Future<void> firebaseMessagingBackgroundHandler(
+    RemoteMessage message,
+  ) async {
+    WidgetsFlutterBinding.ensureInitialized();
 
-  final pushEnabled =
-      prefs.getBool('pushEnabled') ?? true;
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
 
-  if (!pushEnabled) {
+    await NotificationService.initialize();
+
     if (kDebugMode) {
-      print('백그라운드 푸시 OFF 상태');
+      print('백그라운드 FCM 수신');
+      print('백그라운드 데이터: ${message.data}');
     }
-    return;
+
+    await NotificationService.showFromFcmData(
+      message.data,
+    );
   }
 
   if (kDebugMode) {

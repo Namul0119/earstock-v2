@@ -62,6 +62,8 @@ class NotificationService {
   }) async {
     final prefs = await SharedPreferences.getInstance();
 
+    await prefs.reload();
+
     final bool pushEnabled =
         prefs.getBool(pushEnabledKey) ?? true;
 
