@@ -5,6 +5,8 @@ import 'package:http/http.dart' as http;
 import '../config/api_service.dart';
 import 'token_service.dart';
 
+import '../exceptions/api_exceptions.dart';
+
 class FcmTokenApi {
   static final TokenService _tokenService =
       TokenService();
@@ -17,7 +19,9 @@ class FcmTokenApi {
 
     if (accessToken == null ||
         accessToken.isEmpty) {
-      throw Exception('로그인이 필요합니다.');
+      throw UnauthorizedException(
+        '로그인이 필요합니다.',
+      );
     }
 
     final uri = Uri.parse(
@@ -48,7 +52,7 @@ class FcmTokenApi {
       return;
     }
 
-    await _handleUnauthorized(
+    _handleUnauthorized(
       response.statusCode,
     );
 
@@ -99,7 +103,7 @@ class FcmTokenApi {
       return;
     }
 
-    await _handleUnauthorized(
+    _handleUnauthorized(
       response.statusCode,
     );
 
@@ -110,15 +114,11 @@ class FcmTokenApi {
     );
   }
 
-  static Future<void> _handleUnauthorized(
+  static void _handleUnauthorized(
     int statusCode,
-  ) async {
+  ) {
     if (statusCode == 401) {
-      await _tokenService.deleteAccessToken();
-
-      throw Exception(
-        '로그인이 만료되었습니다. 다시 로그인해주세요.',
-      );
+      throw UnauthorizedException();
     }
   }
 }

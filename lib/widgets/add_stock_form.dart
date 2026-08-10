@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../formatters/price_input_formatter.dart';
 
 class AddStockForm extends StatelessWidget {
 
@@ -205,6 +206,11 @@ class AddStockForm extends StatelessWidget {
             TextField(
                 controller: lowController,
                 keyboardType: TextInputType.number,
+
+                inputFormatters: const [
+                    PriceInputFormatter(),
+                ],
+
                 style: const TextStyle(color: Colors.white),
                 decoration: InputDecoration(
                     labelText: '하락 기준 가격',
@@ -213,11 +219,16 @@ class AddStockForm extends StatelessWidget {
                     fillColor: panelColor,
                     enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(16),
-                        borderSide: BorderSide(color: accentColor.withOpacity(0.35)),
+                        borderSide: BorderSide(
+                            color: accentColor.withOpacity(0.35),
+                        ),
                     ),
                     focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(16),
-                        borderSide: BorderSide(color: accentColor, width: 1.5),
+                        borderSide: BorderSide(
+                            color: accentColor,
+                            width: 1.5,
+                        ),
                     ),
                 ),
             ),
@@ -227,6 +238,11 @@ class AddStockForm extends StatelessWidget {
             TextField(
                 controller: highController,
                 keyboardType: TextInputType.number,
+
+                inputFormatters: const [
+                    PriceInputFormatter(),
+                ],
+
                 style: const TextStyle(color: Colors.white),
                 decoration: InputDecoration(
                     labelText: '상승 기준 가격',
@@ -235,11 +251,16 @@ class AddStockForm extends StatelessWidget {
                     fillColor: panelColor,
                     enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(16),
-                        borderSide: BorderSide(color: accentColor.withOpacity(0.35)),
+                        borderSide: BorderSide(
+                            color: accentColor.withOpacity(0.35),
+                        ),
                     ),
                     focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(16),
-                        borderSide: BorderSide(color: accentColor, width: 1.5),
+                        borderSide: BorderSide(
+                            color: accentColor,
+                            width: 1.5,
+                        ),
                     ),
                 ),
             ),

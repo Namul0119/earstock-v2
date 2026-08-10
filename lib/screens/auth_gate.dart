@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../config/api_service.dart';
 import '../services/auth_service.dart';
+import '../services/fcm_registration_service.dart';
 import 'home_page.dart';
 import 'login_page.dart';
 
@@ -34,6 +35,16 @@ class _AuthGateState extends State<AuthGate> {
     if (!mounted) return;
 
     if (isValid) {
+      try {
+        await FcmRegistrationService.initialize();
+      } catch (e) {
+        debugPrint(
+          'FCM 초기화 실패: $e',
+        );
+      }
+
+      if (!mounted) return;
+
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(
           builder: (_) => const HomePage(),

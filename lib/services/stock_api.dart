@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 
 import '../config/api_service.dart';
 import 'token_service.dart';
+import '../exceptions/api_exceptions.dart';
 
 class StockApi {
   static const String baseUrl =
@@ -25,7 +26,7 @@ class StockApi {
         await _tokenService.getAccessToken();
 
     if (token == null || token.isEmpty) {
-      throw Exception(
+      throw UnauthorizedException(
         '로그인 정보가 없습니다. 다시 로그인해주세요.',
       );
     }
@@ -46,9 +47,7 @@ class StockApi {
     );
 
     if (response.statusCode == 401) {
-      throw Exception(
-        '로그인이 만료되었습니다. 다시 로그인해주세요.',
-      );
+      throw UnauthorizedException();
     }
 
     if (response.statusCode != 200) {

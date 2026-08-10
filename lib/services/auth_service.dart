@@ -104,6 +104,120 @@ class AuthService {
         throw Exception(message);
     }
 
+    Future<void> changeLoginId({
+        required String currentPassword,
+        required String newLoginId,
+    }) async {
+        final token =
+            await _tokenService.getAccessToken();
+
+        if (token == null || token.isEmpty) {
+            throw Exception('로그인이 필요합니다.');
+        }
+
+        final uri = Uri.parse(
+            '$baseUrl/api/auth/login-id',
+        );
+
+        final response = await http.put(
+            uri,
+            headers: {
+            'Authorization': 'Bearer $token',
+            'Content-Type': 'application/json',
+            },
+            body: jsonEncode({
+            'currentPassword': currentPassword,
+            'newLoginId': newLoginId.trim(),
+            }),
+        );
+
+        if (response.statusCode >= 200 &&
+            response.statusCode < 300) {
+            return;
+        }
+
+        String message = '아이디 변경에 실패했습니다.';
+
+        try {
+            final data = jsonDecode(
+            utf8.decode(response.bodyBytes),
+            );
+
+            if (data is Map &&
+                data['message'] != null) {
+            message = data['message'].toString();
+            } else if (data is String) {
+            message = data;
+            }
+        } catch (_) {
+            final responseText =
+                utf8.decode(response.bodyBytes);
+
+            if (responseText.isNotEmpty) {
+            message = responseText;
+            }
+        }
+
+        throw Exception(message);
+    }
+
+    Future<void> changePassword({
+        required String currentPassword,
+        required String newPassword,
+    }) async {
+        final token =
+            await _tokenService.getAccessToken();
+
+        if (token == null || token.isEmpty) {
+            throw Exception('로그인이 필요합니다.');
+        }
+
+        final uri = Uri.parse(
+            '$baseUrl/api/auth/password',
+        );
+
+        final response = await http.put(
+            uri,
+            headers: {
+            'Authorization': 'Bearer $token',
+            'Content-Type': 'application/json',
+            },
+            body: jsonEncode({
+            'currentPassword': currentPassword,
+            'newPassword': newPassword,
+            }),
+        );
+
+        if (response.statusCode >= 200 &&
+            response.statusCode < 300) {
+            return;
+        }
+
+        String message = '비밀번호 변경에 실패했습니다.';
+
+        try {
+            final data = jsonDecode(
+            utf8.decode(response.bodyBytes),
+            );
+
+            if (data is Map &&
+                data['message'] != null) {
+            message = data['message'].toString();
+            } else if (data is String) {
+            message = data;
+            }
+        } catch (_) {
+            final responseText =
+                utf8.decode(response.bodyBytes);
+
+            if (responseText.isNotEmpty) {
+            message = responseText;
+            }
+        }
+
+        throw Exception(message);
+    }
+
     Future<bool> validateCurrentSession() async {
         final token =
             await _tokenService.getAccessToken();

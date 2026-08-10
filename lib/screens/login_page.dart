@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../config/api_service.dart';
 import '../services/auth_service.dart';
+import '../services/fcm_registration_service.dart';
 import 'home_page.dart';
 import 'signup_page.dart';
 
@@ -63,6 +64,14 @@ class _LoginPageState extends State<LoginPage> {
                 loginId: loginId,
                 password: password,
             );
+
+            try {
+                await FcmRegistrationService.initialize();
+            } catch (e) {
+                debugPrint(
+                    '로그인 후 FCM 초기화 실패: $e',
+                );
+            }
 
             if (!mounted) return;
 

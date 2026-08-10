@@ -16,6 +16,7 @@ import '../services/stock_data_service.dart';
 import '../services/fcm_registration_service.dart';
 import '../services/auth_service.dart';
 import '../services/fcm_token_api.dart';
+import '../services/server_health_service.dart';
 
 import '../widgets/stock_card.dart';
 import '../widgets/add_stock_form.dart';
@@ -32,7 +33,10 @@ import '../utils/market_utils.dart';
 import '../utils/sound_utils.dart';
 
 import 'login_page.dart';
+import 'account_settings_page.dart';
 import '../config/api_service.dart';
+
+import '../exceptions/api_exceptions.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -92,6 +96,9 @@ class _HomePageState extends State<HomePage> {
   bool isRedirectingToLogin = false;
   int refreshRemainingSeconds = 30;
 
+  Timer? serverHealthTimer;
+  bool isServerConnected = true;
+
   final AudioPlayer audioPlayer =
       AudioPlayer();
 
@@ -109,11 +116,48 @@ class _HomePageState extends State<HomePage> {
     loadAlertsFromSpring();
 
     startStockAutoRefresh();
+    startServerHealthCheck();
+
     //startAlertPolling();
 
     if (!kIsWeb) {
       setupFCM();
     }
+  }
+
+  Future<void> checkServerHealth() async {
+    final connected =
+        await ServerHealthService.isServerAvailable();
+
+    if (!mounted) return;
+
+    if (isServerConnected != connected) {
+      setState(() {
+        isServerConnected = connected;
+      });
+
+      if (connected) {
+        debugPrint('서버 연결 복구');
+
+        await loadStocksFromSpring();
+        await loadAlertsFromSpring();
+      } else {
+        debugPrint('서버 연결 끊김');
+      }
+    }
+  }
+
+  void startServerHealthCheck() {
+    checkServerHealth();
+
+    serverHealthTimer?.cancel();
+
+    serverHealthTimer = Timer.periodic(
+      const Duration(seconds: 5),
+      (_) {
+        checkServerHealth();
+      },
+    );
   }
 
   Future<void> loadSettings() async {
@@ -249,6 +293,7 @@ class _HomePageState extends State<HomePage> {
   void dispose() {
     
     stockRefreshTimer?.cancel();
+    serverHealthTimer?.cancel();
 
     stockSearchDebounceTimer?.cancel();
 
@@ -267,6 +312,13 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<void> addStock() async {
+    if (!isServerConnected) {
+      showMessage(
+        '서버에 연결할 수 없습니다. 잠시 후 다시 시도해주세요.',
+      );
+      return;
+    }
+
     final lowText = lowController.text.trim();
     final highText = highController.text.trim();
 
@@ -281,8 +333,13 @@ class _HomePageState extends State<HomePage> {
       return;
     }
 
-    final lowPrice = int.tryParse(lowText);
-    final highPrice = int.tryParse(highText);
+    final lowPrice = int.tryParse(
+      lowText.replaceAll(',', ''),
+    );
+
+    final highPrice = int.tryParse(
+      highText.replaceAll(',', ''),
+    );
 
     if (lowPrice == null || highPrice == null) {
       showMessage('가격은 숫자로 입력해주세요.');
@@ -346,15 +403,11 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-  Future<bool> handleAuthError(Object error) async {
-    final message = error.toString();
+  Future<bool> handleAuthError(
+    Object error,
+  ) async {
 
-    final isAuthError =
-        message.contains('로그인이 만료되었습니다') ||
-        message.contains('로그인이 필요합니다') ||
-        message.contains('401');
-
-    if (!isAuthError) {
+    if (error is! UnauthorizedException) {
       return false;
     }
 
@@ -368,6 +421,8 @@ class _HomePageState extends State<HomePage> {
     stockSearchDebounceTimer?.cancel();
 
     await authService.logout();
+
+    FcmRegistrationService.reset();
 
     if (!mounted) {
       return true;
@@ -539,10 +594,25 @@ class _HomePageState extends State<HomePage> {
     stockRefreshTimer = Timer.periodic(
       const Duration(seconds: 1),
       (timer) async {
+        if (!mounted) {
+          return;
+        }
+
+        if (!isServerConnected) {
+          if (refreshRemainingSeconds != 30) {
+            setState(() {
+              refreshRemainingSeconds = 30;
+            });
+          }
+
+          return;
+        }
+
         if (refreshRemainingSeconds > 1) {
           setState(() {
             refreshRemainingSeconds--;
           });
+
           return;
         }
 
@@ -659,6 +729,13 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<void> clearAlertLogs() async {
+    if (!isServerConnected) {
+      showMessage(
+        '서버에 연결할 수 없어 알림 기록을 삭제할 수 없습니다.',
+      );
+      return;
+    }
+
     try {
       await AlertDataService.clearAlertLogs();
 
@@ -679,6 +756,13 @@ class _HomePageState extends State<HomePage> {
   Future<void> editStock(
     Map<String, dynamic> stock,
   ) async {
+    if (!isServerConnected) {
+      showMessage(
+        '서버에 연결할 수 없어 감시 기준을 수정할 수 없습니다.',
+      );
+      return;
+    }
+
     final result = await showEditStockDialog(
       context: context,
       stock: stock,
@@ -689,11 +773,15 @@ class _HomePageState extends State<HomePage> {
     }
 
     final lowPrice = int.tryParse(
-      result.lowPriceText,
+      result.lowPriceText
+          .replaceAll(',', '')
+          .trim(),
     );
 
     final highPrice = int.tryParse(
-      result.highPriceText,
+      result.highPriceText
+          .replaceAll(',', '')
+          .trim(),
     );
 
     if (lowPrice == null ||
@@ -791,6 +879,8 @@ class _HomePageState extends State<HomePage> {
 
     await authService.logout();
 
+    FcmRegistrationService.reset();
+
     if (!mounted) {
       return;
     }
@@ -822,6 +912,22 @@ class _HomePageState extends State<HomePage> {
         ),
         actions: [
           IconButton(
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) =>
+                      const AccountSettingsPage(),
+                ),
+              );
+            },
+            tooltip: '계정 설정',
+            icon: const Icon(
+              Icons.settings_outlined,
+              color: Colors.white70,
+            ),
+          ),
+
+          IconButton(
             onPressed: logout,
             tooltip: '로그아웃',
             icon: const Icon(
@@ -829,6 +935,7 @@ class _HomePageState extends State<HomePage> {
               color: Colors.white70,
             ),
           ),
+
           const SizedBox(width: 8),
         ],
       ),
@@ -838,6 +945,59 @@ class _HomePageState extends State<HomePage> {
 
         child: ListView(
           children: [
+
+            if (!isServerConnected) ...[
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 14,
+                ),
+                decoration: BoxDecoration(
+                  color: dangerColor.withOpacity(0.15),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: dangerColor.withOpacity(0.5),
+                  ),
+                ),
+                child: const Row(
+                  children: [
+                    Icon(
+                      Icons.cloud_off_rounded,
+                      color: dangerColor,
+                      size: 22,
+                    ),
+                    SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment:
+                            CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            '서버 연결이 끊어졌습니다.',
+                            style: TextStyle(
+                              color: dangerColor,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 15,
+                            ),
+                          ),
+                          SizedBox(height: 3),
+                          Text(
+                            '연결이 복구될 때까지 감시 정보 수정이 제한됩니다.',
+                            style: TextStyle(
+                              color: Colors.white70,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 12),
+            ],
 
             Container(
               width: double.infinity,
@@ -886,15 +1046,13 @@ class _HomePageState extends State<HomePage> {
                   ),
                 ),
 
-                onPressed: () {
-
-                  setState(() {
-
-                    isAddFormOpen = !isAddFormOpen;
-
-                  });
-
-                },
+                onPressed: isServerConnected
+                    ? () {
+                        setState(() {
+                          isAddFormOpen = !isAddFormOpen;
+                        });
+                      }
+                    : null,
 
                 child: Text(
 
@@ -1121,6 +1279,13 @@ class _HomePageState extends State<HomePage> {
                         await editStock(stock);
                       },
                       onDelete: () async {
+                        if (!isServerConnected) {
+                          showMessage(
+                            '서버에 연결할 수 없어 감시 종목을 삭제할 수 없습니다.',
+                          );
+                          return;
+                        }
+
                         final stockId = stock['id'];
 
                         if (stockId == null) return;
@@ -1161,52 +1326,72 @@ class _HomePageState extends State<HomePage> {
                 ),
             const SizedBox(height: 8),
 
-            InkWell(
-              onTap: () {
-                setState(() {
-                  isLogOpen = !isLogOpen;
-                });
-              },
-
-              child: Row(
-                mainAxisAlignment:
-                MainAxisAlignment.spaceBetween,
-
-                children: [
-
-                  const Text(
-                    '최근 알림',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-
-                  Row(
-                    children: [
-
-                      TextButton(
-                        onPressed: clearAlertLogs,
-                        child: const Text(
-                          '전체 삭제',
-                          style: TextStyle(
-                            color: Colors.white70,
-                            fontWeight: FontWeight.w600,
-                          ),
+            Row(
+              children: [
+                Expanded(
+                  child: InkWell(
+                    borderRadius:
+                        BorderRadius.circular(12),
+                    onTap: () {
+                      setState(() {
+                        isLogOpen = !isLogOpen;
+                      });
+                    },
+                    child: Padding(
+                      padding:
+                          const EdgeInsets.symmetric(
+                        vertical: 12,
+                      ),
+                      child: const Text(
+                        '최근 알림',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight:
+                              FontWeight.bold,
                         ),
                       ),
-
-                      Icon(
-                        isLogOpen
-                            ? Icons.expand_less
-                            : Icons.expand_more,
-                        color: accentColor,
-                        size: 20,
-                      ),
-                    ],
+                    ),
                   ),
-                ],
-              ),
+                ),
+
+                TextButton(
+                  onPressed: clearAlertLogs,
+                  style: TextButton.styleFrom(
+                    padding:
+                        const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 10,
+                    ),
+                  ),
+                  child: const Text(
+                    '전체 삭제',
+                    style: TextStyle(
+                      color: Colors.white70,
+                      fontWeight:
+                          FontWeight.w600,
+                    ),
+                  ),
+                ),
+
+                const SizedBox(width: 16),
+
+                IconButton(
+                  onPressed: () {
+                    setState(() {
+                      isLogOpen = !isLogOpen;
+                    });
+                  },
+                  tooltip:
+                      isLogOpen ? '알림 접기' : '알림 펼치기',
+                  icon: Icon(
+                    isLogOpen
+                        ? Icons.expand_less
+                        : Icons.expand_more,
+                    color: accentColor,
+                    size: 24,
+                  ),
+                ),
+              ],
             ),
 
             const SizedBox(height: 8),
