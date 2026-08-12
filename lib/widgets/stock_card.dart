@@ -23,11 +23,25 @@ class StockCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final double changeRate =
-        double.tryParse(stock['changeRate'].toString()) ?? 0.0;
+    final int currentPrice =
+    int.tryParse(
+      stock['currentPrice']?.toString() ?? '',
+    ) ??
+    0;
 
-    final int changePrice =
-        int.tryParse(stock['changePrice'].toString()) ?? 0;
+    final int basePrice =
+        int.tryParse(
+          stock['basePrice']?.toString() ?? '',
+        ) ??
+        0;
+
+    final int myChangePrice =
+        currentPrice - basePrice;
+
+    final double myChangeRate =
+        basePrice > 0
+            ? (myChangePrice / basePrice) * 100
+            : 0.0;
 
     final int volume =
         int.tryParse(stock['volume'].toString()) ?? 0;
@@ -130,14 +144,15 @@ class StockCard extends StatelessWidget {
                 const SizedBox(height: 4),
 
                 Text(
-                  '${changePrice >= 0 ? '▲' : '▼'}'
-                  '${formatPrice(changePrice.abs())}원 '
-                  '(${changeRate >= 0 ? '+' : '-'}'
-                  '${changeRate.abs().toStringAsFixed(2)}%)',
+                  '내 매수가 대비 '
+                  '${myChangePrice >= 0 ? '▲' : '▼'}'
+                  '${formatPrice(myChangePrice.abs())}원 '
+                  '(${myChangeRate >= 0 ? '+' : '-'}'
+                  '${myChangeRate.abs().toStringAsFixed(2)}%)',
                   style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
-                    color: changeRate >= 0
+                    color: myChangeRate >= 0
                         ? successColor
                         : dangerColor,
                   ),

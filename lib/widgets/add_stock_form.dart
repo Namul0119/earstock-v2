@@ -4,6 +4,7 @@ import '../formatters/price_input_formatter.dart';
 class AddStockForm extends StatelessWidget {
 
     final TextEditingController stockController;
+    final TextEditingController baseController;
     final TextEditingController lowController;
     final TextEditingController highController;
     final VoidCallback onClearSearch;
@@ -20,6 +21,7 @@ class AddStockForm extends StatelessWidget {
     const AddStockForm({
         super.key,
         required this.stockController,
+        required this.baseController,
         required this.lowController,
         required this.highController,
         required this.panelColor,
@@ -202,6 +204,44 @@ class AddStockForm extends StatelessWidget {
                             },
                         ),
             ),
+
+            TextField(
+                controller: baseController,
+                keyboardType: TextInputType.number,
+                inputFormatters: const [
+                    PriceInputFormatter(),
+                ],
+                style: const TextStyle(
+                    color: Colors.white,
+                ),
+                decoration: InputDecoration(
+                    labelText: '내 매수가',
+                    hintText: '예: 400,000',
+                    labelStyle: const TextStyle(
+                    color: Colors.white70,
+                    ),
+                    hintStyle: const TextStyle(
+                    color: Colors.white38,
+                    ),
+                    filled: true,
+                    fillColor: panelColor,
+                    enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: BorderSide(
+                        color: accentColor.withOpacity(0.35),
+                    ),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: BorderSide(
+                        color: accentColor,
+                        width: 1.5,
+                    ),
+                    ),
+                ),
+            ),
+
+            const SizedBox(height: 12),
 
             TextField(
                 controller: lowController,

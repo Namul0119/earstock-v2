@@ -80,6 +80,7 @@ class WatchApi {
 
   static Future<void> addWatch({
     required String stockCode,
+    required int basePrice,
     required int lowPrice,
     required int highPrice,
   }) async {
@@ -93,6 +94,7 @@ class WatchApi {
 
     final requestBody = {
       'stockCode': stockCode,
+      'basePrice': basePrice,
       'lowPrice': lowPrice,
       'highPrice': highPrice,
     };
@@ -170,6 +172,7 @@ class WatchApi {
 
   static Future<void> updateWatch({
     required String id,
+    required int basePrice,
     required int lowPrice,
     required int highPrice,
   }) async {
@@ -185,6 +188,7 @@ class WatchApi {
       uri,
       headers: headers,
       body: jsonEncode({
+        'basePrice': basePrice,
         'lowPrice': lowPrice,
         'highPrice': highPrice,
       }),

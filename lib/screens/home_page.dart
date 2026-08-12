@@ -60,6 +60,7 @@ class _HomePageState extends State<HomePage> {
   late final AuthService authService;
 
   final TextEditingController stockController = TextEditingController();
+  final TextEditingController baseController = TextEditingController();
   final TextEditingController lowController = TextEditingController();
   final TextEditingController highController = TextEditingController();
 
@@ -304,6 +305,7 @@ class _HomePageState extends State<HomePage> {
     messageOverlay = null;
 
     stockController.dispose();
+    baseController.dispose();
     lowController.dispose();
     highController.dispose();
     audioPlayer.dispose();
@@ -319,6 +321,7 @@ class _HomePageState extends State<HomePage> {
       return;
     }
 
+    final baseText = baseController.text.trim();
     final lowText = lowController.text.trim();
     final highText = highController.text.trim();
 
@@ -328,10 +331,16 @@ class _HomePageState extends State<HomePage> {
       return;
     }
 
-    if (lowText.isEmpty || highText.isEmpty) {
+    if (baseText.isEmpty ||
+        lowText.isEmpty ||
+        highText.isEmpty) {
       showMessage('모든 값을 입력해주세요.');
       return;
     }
+
+    final basePrice = int.tryParse(
+      baseText.replaceAll(',', ''),
+    );
 
     final lowPrice = int.tryParse(
       lowText.replaceAll(',', ''),
@@ -341,8 +350,17 @@ class _HomePageState extends State<HomePage> {
       highText.replaceAll(',', ''),
     );
 
-    if (lowPrice == null || highPrice == null) {
+    if (basePrice == null ||
+        lowPrice == null ||
+        highPrice == null) {
       showMessage('가격은 숫자로 입력해주세요.');
+      return;
+    }
+
+    if (basePrice <= 0 ||
+        lowPrice <= 0 ||
+        highPrice <= 0) {
+      showMessage('가격은 0보다 크게 입력해주세요.');
       return;
     }
 
@@ -369,6 +387,7 @@ class _HomePageState extends State<HomePage> {
     try {
       await WatchApi.addWatch(
         stockCode: stockCode,
+        basePrice: basePrice,
         lowPrice: lowPrice,
         highPrice: highPrice,
       );
@@ -380,6 +399,7 @@ class _HomePageState extends State<HomePage> {
 
       setState(() {
         stockController.clear();
+        baseController.clear();
         lowController.clear();
         highController.clear();
 
@@ -772,6 +792,12 @@ class _HomePageState extends State<HomePage> {
       return;
     }
 
+    final basePrice = int.tryParse(
+      result.basePriceText
+          .replaceAll(',', '')
+          .trim(),
+    );
+
     final lowPrice = int.tryParse(
       result.lowPriceText
           .replaceAll(',', '')
@@ -784,9 +810,17 @@ class _HomePageState extends State<HomePage> {
           .trim(),
     );
 
-    if (lowPrice == null ||
+    if (basePrice == null ||
+        lowPrice == null ||
         highPrice == null) {
       showMessage('숫자를 입력해주세요.');
+      return;
+    }
+
+    if (basePrice <= 0 ||
+        lowPrice <= 0 ||
+        highPrice <= 0) {
+      showMessage('가격은 0보다 크게 입력해주세요.');
       return;
     }
 
@@ -801,6 +835,7 @@ class _HomePageState extends State<HomePage> {
     try {
       await WatchApi.updateWatch(
         id: stock['id'].toString(),
+        basePrice: basePrice,
         lowPrice: lowPrice,
         highPrice: highPrice,
       );
@@ -1078,6 +1113,7 @@ class _HomePageState extends State<HomePage> {
             if (isAddFormOpen) ...[
               AddStockForm(
                 stockController: stockController,
+                baseController: baseController,
                 lowController: lowController,
                 highController: highController,
 

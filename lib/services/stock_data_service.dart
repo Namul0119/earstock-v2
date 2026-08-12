@@ -23,6 +23,9 @@ class StockDataService {
           'stockCode':
               item['stockCode'].toString(),
 
+          'basePrice':
+              item['basePrice']?.toString() ?? '',
+
           'low':
               item['lowPrice'].toString(),
 
